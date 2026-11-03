@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
+    <IsPackable>true</IsPackable>
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsTrimmable>true</IsTrimmable>
+    <PackageId>Vmc.Client</PackageId>
+    <Title>Vmc.Client</Title>
+    <Description>.NET implementation of the VMC (Virtual Motion Capture) protocol over OSC: every message of protocol 3.1 as a typed record, generated from the protocol table, with an OSC codec and UDP sender and receiver. Native AOT compatible.</Description>
+    <PackageTags>vmc;vmcprotocol;osc;vtuber;vrm;vseeface;motion-capture</PackageTags>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="..\..\spec\vmc-protocol.txt" />
+    <ProjectReference
+      Include="..\Vmc.Client.Generators\Vmc.Client.Generators.csproj"
+      OutputItemType="Analyzer"
+      ReferenceOutputAssembly="false"
+      PrivateAssets="all"
+    />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="MinVer" PrivateAssets="all" />
+    <PackageReference Include="DotNet.ReproducibleBuilds" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

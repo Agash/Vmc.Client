@@ -1,0 +1,39 @@
+# The VMC protocol's messages, one per line, read by Vmc.Client.Generators.
+# Source: https://protocol.vmc.info/english (protocol version 3.1).
+# name | address | direction (ToMarionette, ToPerformer, Both) | since | arguments | optional trailing arguments
+# An argument is type:Name with type s (string), i (int32) or f (float32); an optional one adds @version.
+
+Available | /VMC/Ext/OK | ToMarionette | 2.0 | i:Loaded | i:CalibrationState@2.5 i:CalibrationMode@2.5 i:TrackingStatus@2.7
+RelativeTime | /VMC/Ext/T | ToMarionette | 2.0 | f:Time
+RootTransform | /VMC/Ext/Root/Pos | ToMarionette | 2.0 | s:Name f:PositionX f:PositionY f:PositionZ f:RotationX f:RotationY f:RotationZ f:RotationW | f:ScaleX@2.1 f:ScaleY@2.1 f:ScaleZ@2.1 f:OffsetX@2.1 f:OffsetY@2.1 f:OffsetZ@2.1
+BoneTransform | /VMC/Ext/Bone/Pos | ToMarionette | 2.0 | s:Bone f:PositionX f:PositionY f:PositionZ f:RotationX f:RotationY f:RotationZ f:RotationW
+BlendShapeValue | /VMC/Ext/Blend/Val | Both | 2.0 | s:Name f:Value
+BlendShapeApply | /VMC/Ext/Blend/Apply | Both | 2.0
+Camera | /VMC/Ext/Cam | Both | 2.1 | s:Name f:PositionX f:PositionY f:PositionZ f:RotationX f:RotationY f:RotationZ f:RotationW f:FieldOfView
+ControllerInput | /VMC/Ext/Con | ToMarionette | 2.1 | i:Active s:Name i:IsLeft i:IsTouch i:IsAxis f:AxisX f:AxisY f:AxisZ
+KeyInput | /VMC/Ext/Key | ToMarionette | 2.1 | i:Active s:Name i:KeyCode
+MidiNote | /VMC/Ext/Midi/Note | ToMarionette | 2.2 | i:Active i:Channel i:Note f:Velocity
+MidiControlValue | /VMC/Ext/Midi/CC/Val | Both | 2.2 | i:Knob f:Value
+MidiControlButton | /VMC/Ext/Midi/CC/Bit | ToMarionette | 2.2 | i:Knob i:Active
+HmdTransform | /VMC/Ext/Hmd/Pos | Both | 2.2 | s:Serial f:PositionX f:PositionY f:PositionZ f:RotationX f:RotationY f:RotationZ f:RotationW
+ControllerTransform | /VMC/Ext/Con/Pos | Both | 2.2 | s:Serial f:PositionX f:PositionY f:PositionZ f:RotationX f:RotationY f:RotationZ f:RotationW
+TrackerTransform | /VMC/Ext/Tra/Pos | Both | 2.2 | s:Serial f:PositionX f:PositionY f:PositionZ f:RotationX f:RotationY f:RotationZ f:RotationW
+HmdLocalTransform | /VMC/Ext/Hmd/Pos/Local | ToMarionette | 2.3 | s:Serial f:PositionX f:PositionY f:PositionZ f:RotationX f:RotationY f:RotationZ f:RotationW
+ControllerLocalTransform | /VMC/Ext/Con/Pos/Local | ToMarionette | 2.3 | s:Serial f:PositionX f:PositionY f:PositionZ f:RotationX f:RotationY f:RotationZ f:RotationW
+TrackerLocalTransform | /VMC/Ext/Tra/Pos/Local | ToMarionette | 2.3 | s:Serial f:PositionX f:PositionY f:PositionZ f:RotationX f:RotationY f:RotationZ f:RotationW
+ReceiveSetting | /VMC/Ext/Rcv | ToMarionette | 2.4 | i:Enable i:Port | s:Host@2.7
+DirectionalLight | /VMC/Ext/Light | Both | 2.4 | s:Name f:PositionX f:PositionY f:PositionZ f:RotationX f:RotationY f:RotationZ f:RotationW f:Red f:Green f:Blue f:Alpha
+LoadedVrm | /VMC/Ext/VRM | ToMarionette | 2.4 | s:Path s:Title | s:Hash@2.7
+RemoteAvatar | /VMC/Ext/Remote | ToMarionette | 3.0 | s:Service s:Json
+Option | /VMC/Ext/Opt | ToMarionette | 2.4 | s:Value
+BackgroundColor | /VMC/Ext/Setting/Color | ToMarionette | 2.4 | f:Red f:Green f:Blue f:Alpha
+WindowSetting | /VMC/Ext/Setting/Win | ToMarionette | 2.4 | i:IsTopMost i:IsTransparent i:WindowClickThrough i:HideBorder
+LoadedConfig | /VMC/Ext/Config | ToMarionette | 2.5 | s:Path
+SendPeriod | /VMC/Ext/Set/Period | ToPerformer | 2.3 | i:Status i:Root i:Bone i:BlendShape i:Camera i:Devices
+EyeTarget | /VMC/Ext/Set/Eye | ToPerformer | 2.3 | i:Enable f:PositionX f:PositionY f:PositionZ
+InfoRequest | /VMC/Ext/Set/Req | ToPerformer | 2.4
+InfoResponse | /VMC/Ext/Set/Res | ToPerformer | 2.4 | s:Response
+CalibrationReady | /VMC/Ext/Set/Calib/Ready | ToPerformer | 2.5
+CalibrationExecute | /VMC/Ext/Set/Calib/Exec | ToPerformer | 2.5 | i:Mode
+LoadConfig | /VMC/Ext/Set/Config | ToPerformer | 2.5 | s:Path
+Shortcut | /VMC/Ext/Set/Shortcut | ToPerformer | 3.1 | s:Name
