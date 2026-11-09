@@ -1,3 +1,5 @@
+using OpenSoundControl.Core;
+
 namespace Vmc.Client.Tests;
 
 [TestClass]
@@ -141,5 +143,19 @@ public sealed class VmcTests
 
         Assert.AreEqual(new BlendShapeValue("A", 0.5f), received[0]);
         Assert.IsInstanceOfType<BlendShapeApply>(received[1]);
+    }
+
+    [TestMethod]
+    public void GeneratedMessage_RoutesAsATypedOscMessage()
+    {
+        OscRouter router = new();
+        BlendShapeValue? seen = null;
+        using IDisposable route = router.On<BlendShapeValue>(value => seen = value);
+
+        int called = router.Dispatch(new BlendShapeValue("Joy", 0.5f).ToOsc());
+
+        Assert.AreEqual(1, called);
+        Assert.AreEqual(new BlendShapeValue("Joy", 0.5f), seen);
+        Assert.AreEqual("/VMC/Ext/Blend/Val", BlendShapeValue.Address);
     }
 }

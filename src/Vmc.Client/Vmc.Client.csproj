@@ -20,6 +20,8 @@
       ReferenceOutputAssembly="false"
       PrivateAssets="all"
     />
+    <PackageReference Include="OpenSoundControl.Core" />
+    <Using Include="OpenSoundControl.Core" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="MinVer" PrivateAssets="all" />
     <PackageReference Include="DotNet.ReproducibleBuilds" PrivateAssets="all" />

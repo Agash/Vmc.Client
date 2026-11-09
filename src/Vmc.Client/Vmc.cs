@@ -24,9 +24,6 @@ public enum VmcDirection
 /// <summary>A VMC message; every one the protocol defines is generated from <c>spec/vmc-protocol.txt</c>.</summary>
 public interface IVmcMessage
 {
-    /// <summary>The OSC address.</summary>
-    string Address { get; }
-
     /// <summary>Who sends it.</summary>
     VmcDirection Direction { get; }
 
@@ -116,135 +113,78 @@ public static class VrmBlendShapes
     public static string ToVrm0(string vrm1Name) => _toVrm0.GetValueOrDefault(vrm1Name, vrm1Name);
 }
 
-/// <summary>Sends VMC messages over UDP.</summary>
+/// <summary>Sends VMC messages to a Marionette (39539) or Performer (39540), bundling a frame into datagrams that fit one Ethernet frame.</summary>
 public sealed class VmcSender : IDisposable
 {
-    // The protocol asks for bundles that fit one Ethernet frame.
-    private const int MaxBundleBytes = 1500;
+    private readonly OscUdpSender _udp;
 
-    private readonly UdpClient _udp;
-    private readonly IPEndPoint _target;
-
-    /// <summary>A sender to one receiver.</summary>
-    /// <param name="host">The receiver's host.</param>
-    /// <param name="port">Its port; a performer listens on <see cref="VmcMessages.PerformerPort"/>, a marionette on <see cref="VmcMessages.MarionettePort"/>.</param>
-    public VmcSender(string host = "127.0.0.1", int port = VmcMessages.PerformerPort)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(host);
-        _target = new IPEndPoint(Dns.GetHostAddresses(host)[0], port);
-        _udp = new UdpClient(_target.AddressFamily);
-    }
+    /// <summary>A sender.</summary>
+    /// <param name="host">The receiving app's host.</param>
+    /// <param name="port">Its VMC port.</param>
+    public VmcSender(string host = "127.0.0.1", int port = VmcMessages.PerformerPort) =>
+        _udp = OscUdpSender.Create(host, port);
 
     /// <summary>Sends one message.</summary>
     /// <param name="message">The message.</param>
     /// <param name="ct">Cancels the send.</param>
     /// <returns>When it is sent.</returns>
-    public async ValueTask SendAsync(IVmcMessage message, CancellationToken ct = default)
+    public ValueTask SendAsync(IVmcMessage message, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(message);
-        _ = await _udp.SendAsync(OscCodec.Encode(message.ToOsc()), _target, ct)
-            .ConfigureAwait(false);
+        return _udp.SendAsync(message.ToOsc(), ct);
     }
 
-    /// <summary>Sends a frame of messages as bundles that each fit one datagram; send blendshape values with their <see cref="BlendShapeApply"/> last.</summary>
+    /// <summary>Sends a frame of messages as bundles, the way VMC senders do.</summary>
     /// <param name="messages">The frame.</param>
     /// <param name="ct">Cancels the send.</param>
     /// <returns>When it is sent.</returns>
-    public async ValueTask SendFrameAsync(
+    public ValueTask SendFrameAsync(
         IEnumerable<IVmcMessage> messages,
         CancellationToken ct = default
     )
     {
         ArgumentNullException.ThrowIfNull(messages);
-        List<OscMessage> bundle = [];
-        int size = 16;
-        foreach (IVmcMessage message in messages)
-        {
-            OscMessage osc = message.ToOsc();
-            int length = OscCodec.Encode(osc).Length + 4;
-            if (bundle.Count > 0 && size + length > MaxBundleBytes)
-            {
-                _ = await _udp.SendAsync(OscCodec.EncodeBundle(bundle), _target, ct)
-                    .ConfigureAwait(false);
-                bundle.Clear();
-                size = 16;
-            }
-
-            bundle.Add(osc);
-            size += length;
-        }
-
-        if (bundle.Count > 0)
-        {
-            _ = await _udp.SendAsync(OscCodec.EncodeBundle(bundle), _target, ct)
-                .ConfigureAwait(false);
-        }
+        return _udp.SendBundleAsync(messages.Select(static m => m.ToOsc()), ct: ct);
     }
 
     /// <inheritdoc/>
     public void Dispose() => _udp.Dispose();
 }
 
-/// <summary>Receives VMC messages over UDP.</summary>
-public sealed partial class VmcReceiver : IDisposable
+/// <summary>Receives VMC messages on a port, as a Marionette or Performer does.</summary>
+public sealed class VmcReceiver : IDisposable
 {
-    private readonly UdpClient _udp;
-    private readonly ILogger _logger;
+    private readonly OscUdpReceiver _udp;
 
-    /// <summary>A receiver on a local port.</summary>
-    /// <param name="port">The port; a marionette listens on <see cref="VmcMessages.MarionettePort"/>.</param>
-    /// <param name="logger">Where it logs.</param>
-    public VmcReceiver(int port = VmcMessages.MarionettePort, ILogger<VmcReceiver>? logger = null)
-    {
-        _udp = new UdpClient(new IPEndPoint(IPAddress.Any, port));
-        _logger = (ILogger?)logger ?? NullLogger.Instance;
-    }
+    /// <summary>A receiver.</summary>
+    /// <param name="port">The port; VMC Marionettes listen on 39539.</param>
+    /// <param name="bind">The local address; loopback unless given.</param>
+    /// <param name="logger">Where receive faults are logged.</param>
+    public VmcReceiver(
+        int port = VmcMessages.MarionettePort,
+        System.Net.IPAddress? bind = null,
+        Microsoft.Extensions.Logging.ILogger<OscUdpReceiver>? logger = null
+    ) => _udp = new OscUdpReceiver(port, bind, logger);
 
-    /// <summary>The port the receiver is bound to.</summary>
-    public int Port => ((IPEndPoint)_udp.Client.LocalEndPoint!).Port;
+    /// <summary>The port it listens on.</summary>
+    public int Port => _udp.Port;
 
-    /// <summary>Every message received, read as VMC; messages the protocol does not define are skipped.</summary>
-    /// <param name="ct">Ends the stream.</param>
-    /// <returns>The messages in arrival order.</returns>
+    /// <summary>Every VMC message received, known ones typed and vendor ones as <see cref="VmcThruMessage"/>.</summary>
+    /// <param name="ct">Ends the reading.</param>
+    /// <returns>The messages.</returns>
     public async IAsyncEnumerable<IVmcMessage> ReadAllAsync(
-        [EnumeratorCancellation] CancellationToken ct = default
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default
     )
     {
-        while (!ct.IsCancellationRequested)
+        await foreach (OscReceived received in _udp.ReadAllAsync(ct).ConfigureAwait(false))
         {
-            UdpReceiveResult datagram;
-            try
+            if (VmcMessages.Read(received.Message) is { } vmc)
             {
-                datagram = await _udp.ReceiveAsync(ct).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                yield break;
-            }
-            catch (SocketException ex)
-            {
-                // A previous send's ICMP error surfaces on the next receive on Windows; the socket stays usable.
-                LogReceiveFailed(_logger, ex);
-                continue;
-            }
-
-            foreach (OscMessage message in OscCodec.Decode(datagram.Buffer))
-            {
-                if (VmcMessages.Read(message) is { } vmc)
-                {
-                    yield return vmc;
-                }
+                yield return vmc;
             }
         }
     }
 
     /// <inheritdoc/>
     public void Dispose() => _udp.Dispose();
-
-    [LoggerMessage(
-        EventId = 1,
-        Level = LogLevel.Debug,
-        Message = "A VMC receive failed; receiving continues."
-    )]
-    private static partial void LogReceiveFailed(ILogger logger, Exception exception);
 }

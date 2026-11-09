@@ -34,6 +34,11 @@ and case sensitive; `VrmBlendShapes` converts to and from VRM 1.0 names. Message
 versions are optional trailing arguments, so older senders still read. Vendor `/VMC/Thru/` messages arrive as
 `VmcThruMessage` for relaying.
 
+OSC itself comes from [`OpenSoundControl.Core`](https://github.com/Agash/OpenSoundControl.Core). Every generated message implements its
+`IOscMessage<TSelf>`, so it routes typed on a shared endpoint beside other OSC dialects:
+`router.On<BlendShapeValue>(...)`. `VmcReceiver` listens on loopback unless given a `bind` address; pass
+`IPAddress.Any` to receive from another machine.
+
 ## Adding a message
 
 Add a line to `spec/vmc-protocol.txt`; the source generator in `src/Vmc.Client.Generators` emits its record,

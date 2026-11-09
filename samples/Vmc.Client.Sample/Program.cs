@@ -1,3 +1,4 @@
+using OpenSoundControl.Core;
 using Vmc.Client;
 
 // Two modes:

@@ -16,6 +16,7 @@
       Include="Microsoft.Extensions.Logging.Abstractions"
       Version="$(DotNetPackageVersion)"
     />
+    <PackageVersion Include="OpenSoundControl.Core" Version="0.1.0-dev2" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="$(DotNetPackageVersion)" />
     <PackageVersion Include="MinVer" Version="8.0.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />

@@ -252,13 +252,15 @@ public sealed class VmcMessageGenerator : IIncrementalGenerator
                 );
             }
 
-            s.AppendLine($"public sealed partial record {Name}({parameters}) : IVmcMessage");
+            s.AppendLine(
+                $"public sealed partial record {Name}({parameters}) : IVmcMessage, global::OpenSoundControl.Core.IOscMessage<{Name}>"
+            );
             s.AppendLine("{");
             s.AppendLine("    /// <summary>The OSC address.</summary>");
             s.AppendLine($"    public const string AddressPattern = \"{Address}\";");
             s.AppendLine();
             s.AppendLine("    /// <inheritdoc/>");
-            s.AppendLine("    public string Address => AddressPattern;");
+            s.AppendLine("    public static string Address => AddressPattern;");
             s.AppendLine();
             s.AppendLine("    /// <inheritdoc/>");
             s.AppendLine($"    public VmcDirection Direction => VmcDirection.{Direction};");
